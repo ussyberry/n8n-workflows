@@ -1,0 +1,238 @@
+{
+  "name": "HYBRIDO",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a travel API parameter extraction agent. Your only job is to parse user travel requests and output a single, valid JSON object for one Amadeus API endpoint.\n\nAvailable APIs:\n- flightoffers - Flight search\n- hotellist - Hotel search by city  \n- transfersearch - Transfer/car service search\n- airportlookup - Airport and location search\n\nOutput Requirements:\nReturn ONLY valid JSON with these parameters as needed:\n\nFlight Offers:\n{\n  \"api\": \"flightoffers\",\n  \"originLocationCode\": \"LAX\",\n  \"destinationLocationCode\": \"JFK\", \n  \"departureDate\": \"2025-10-15\",\n  \"adults\": 1,\n  \"children\": 0,\n  \"infants\": 0\n}\n\nHotel List:\n{\n  \"api\": \"hotellist\",\n  \"cityCode\": \"NYC\",\n  \"radius\": 5,\n  \"radiusUnit\": \"KM\"\n}\n\nTransfer Search:\n{\n  \"api\": \"transfersearch\",\n  \"startDateTime\": \"2025-10-15T14:00:00\",\n  \"startLocationCode\": \"JFK\",\n  \"endLocationCode\": \"NYC\",\n  \"transferType\": \"PRIVATE\",\n  \"passengers\": 1,\n  \"duration\": \"PT1H\"\n}\n\nAirport Lookup:\n{\n  \"api\": \"airportlookup\",\n  \"subType\": \"AIRPORT\",\n  \"keyword\": \"London\"\n}\n\nRules:\n- Output ONLY the JSON object, no explanations\n- Use valid IATA codes when possible\n- Use ISO date format (YYYY-MM-DD)\n- Include only relevant parameters for the chosen API\n- Default adults=1, radius=5, transferType=\"PRIVATE\" if not specified\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -32,
+        -128
+      ],
+      "id": "641b834f-8ed7-46c3-a942-f8a829cd4d92",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "code": {
+          "execute": {
+            "code": "// LangChain Code for MERGED input data\n// Single input containing both AI Agent output and token data\n\n// Get merged data from single input\nconst mergedInput = this.getInputData(0)?.[0]?.json;\n\nif (!mergedInput) {\n  return [{ json: { error: 'No merged input received' } }];\n}\n\n// Extract AI Agent output (usually in the second item after merge)\nlet aiOutput = '';\nlet accessToken = '';\n\n// Method 1: Try direct access if merge combines properly\nif (mergedInput.output || mergedInput.text) {\n  aiOutput = mergedInput.output || mergedInput.text;\n}\nif (mergedInput.access_token) {\n  accessToken = mergedInput.access_token;\n}\n\n// Method 2: If merge creates array structure\nif (!aiOutput && Array.isArray(this.getInputData(0))) {\n  const allMergedData = this.getInputData(0);\n  \n  // Look for AI Agent output\n  for (const item of allMergedData) {\n    if (item?.json?.output || item?.json?.text) {\n      aiOutput = item.json.output || item.json.text;\n    }\n    if (item?.json?.access_token) {\n      accessToken = item.json.access_token;\n    }\n  }\n}\n\n// Validate we have both pieces\nif (!aiOutput) {\n  return [{ json: { \n    error: 'No AI Agent output found in merged data',\n    debug: { receivedData: mergedInput }\n  } }];\n}\n\nif (!accessToken) {\n  return [{ json: { \n    error: 'No access token found in merged data',\n    debug: { receivedData: mergedInput }\n  } }];\n}\n\n// Parse JSON from AI Agent output\nlet requestParams;\ntry {\n  const jsonMatch = aiOutput.match(/\\{[\\s\\S]*\\}/);\n  if (!jsonMatch) {\n    throw new Error('No JSON object found in AI output');\n  }\n  requestParams = JSON.parse(jsonMatch[0]);\n} catch (error) {\n  return [{ json: { error: 'Failed to parse AI Agent JSON: ' + error.message } }];\n}\n\n// Validate API parameter\nif (!requestParams.api) {\n  return [{ json: { error: 'No API endpoint specified in request parameters' } }];\n}\n\n// Rest of the code remains the same...\nconst headers = {\n  'Authorization': `Bearer ${accessToken}`,\n  'Accept': 'application/vnd.amadeus+json'\n};\n\nconst baseUrl = 'https://test.api.amadeus.com';\nlet options = { headers: headers, json: true };\n\n// API routing\nswitch (requestParams.api.toLowerCase()) {\n  case 'flightoffers':\n    options.uri = `${baseUrl}/v2/shopping/flight-offers`;\n    options.method = 'GET';\n    options.qs = {\n      originLocationCode: requestParams.originLocationCode,\n      destinationLocationCode: requestParams.destinationLocationCode,\n      departureDate: requestParams.departureDate,\n      adults: requestParams.adults || 1,\n      children: requestParams.children || 0,\n      infants: requestParams.infants || 0\n    };\n    break;\n\n  case 'hotellist':\n    options.uri = `${baseUrl}/v1/reference-data/locations/hotels/by-city`;\n    options.method = 'GET';\n    options.qs = {\n      cityCode: requestParams.cityCode,\n      radius: requestParams.radius || 5,\n      radiusUnit: requestParams.radiusUnit || 'KM'\n    };\n    break;\n\n  case 'transfersearch':\n    options.uri = `${baseUrl}/v1/shopping/transfer-offers`;\n    options.method = 'POST';\n    options.body = {\n      startDateTime: requestParams.startDateTime,\n      startLocationCode: requestParams.startLocationCode,\n      endLocationCode: requestParams.endLocationCode,\n      transferType: requestParams.transferType || 'PRIVATE',\n      passengers: requestParams.passengers || 1,\n      duration: requestParams.duration\n    };\n    break;\n\n  case 'airportlookup':\n    options.uri = `${baseUrl}/v1/reference-data/locations`;\n    options.method = 'GET';\n    options.qs = {\n      subType: requestParams.subType || 'AIRPORT',\n      keyword: requestParams.keyword\n    };\n    break;\n\n  default:\n    return [{ json: { error: `Unknown API endpoint: ${requestParams.api}` } }];\n}\n\n// Execute API call\ntry {\n  const response = await this.helpers.request(options);\n  \n  return [{\n    json: {\n      success: true,\n      api: requestParams.api,\n      endpoint: options.uri,\n      method: options.method,\n      timestamp: new Date().toISOString(),\n      data: response\n    }\n  }];\n\n} catch (error) {\n  return [{ json: {\n    success: false,\n    api: requestParams.api,\n    endpoint: options.uri,\n    error: error.message,\n    statusCode: error.response?.statusCode,\n    apiError: error.response?.body\n  } }];\n}\n"
+          }
+        },
+        "inputs": {
+          "input": [
+            {
+              "type": "ai_memory",
+              "required": true
+            },
+            {
+              "type": "main"
+            }
+          ]
+        },
+        "outputs": {
+          "output": [
+            {
+              "type": "main"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.code",
+      "typeVersion": 1,
+      "position": [
+        768,
+        -128
+      ],
+      "id": "ddf32d86-869d-404b-8fa2-06fbbc2f9070",
+      "name": "LangChain Code"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-nano-9b-v2",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        112
+      ],
+      "id": "31790b2c-be87-4450-a230-4387d30525c1",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "fSIW6LP1RuA32Hog",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://test.api.amadeus.com/v1/security/oauth2/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "client_id",
+              "value": "47FYrahcA8nUPDLXfhAeFHYTJF2nx8kR"
+            },
+            {
+              "name": "client_secret",
+              "value": "NMwO24vhyASe6mHy"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -192
+      ],
+      "id": "3294d3d5-e1c7-4d75-897d-540784a18481",
+      "name": "Get Token"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        112
+      ],
+      "id": "b77973a5-6287-42c3-a073-6d395100b555",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        -128
+      ],
+      "id": "39a8a475-ca2d-4aa4-b909-96a153389eab",
+      "name": "When chat message received",
+      "webhookId": "de63ae87-631c-42dd-a17f-fbd1e35a88a6"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        544,
+        -128
+      ],
+      "id": "7da5a29e-38ac-4a03-a674-b8f35db93204",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Get Token",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Token": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "LangChain Code",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "LangChain Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0c857f7f-2e59-4496-a20f-62ab58656203",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b3398227427234397588ecb0e39c75fdbe7391b3b1893a085901f207d8f46554"
+  },
+  "id": "fxfP47Y1MfcOMW1t",
+  "tags": []
+}

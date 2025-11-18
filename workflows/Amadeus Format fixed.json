@@ -1,0 +1,387 @@
+{
+  "name": "Amadeus Format fixed",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1088,
+        80
+      ],
+      "id": "979f4673-106e-4d6f-93b8-0910768e1876",
+      "name": "When chat message received",
+      "webhookId": "4ef60d17-a651-47af-865a-5a8ea91f655b"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-nano-9b-v2:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        304
+      ],
+      "id": "8e3337fc-5d0d-4120-8492-6104623d71db",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "fSIW6LP1RuA32Hog",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -736,
+        304
+      ],
+      "id": "fb3c5bb8-be78-4f61-939a-6a3654cbd4f7",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sjz9uJlsakAL46Xk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an AI flight search assistant integrated into an automated workflow. Your role is to generate a precisely structured JSON output for downstream nodes to consume.\n\nHere is the context of the automation workflow:\n\n- A Token Generation node securely provides OAuth tokens for the Amadeus Flight API.\n- A Merge node combines the OAuth token and parsed input parameters into a unified JSON.\n- A LangChain Code node runs your output, extracts the JSON for the next steps.\n- An HTTP Request node uses your output to query the Amadeus Flight Offers API.\n\nYour functions are:\n\n- Parse the user's flight search request.\n- Generate exactly one valid JSON object with the following keys and values:\n  - origin: 3-letter IATA airport code (e.g., \"SYD\")\n  - destination: 3-letter IATA airport code (e.g., \"LON\")\n  - departureDate: ISO-8601 date string (YYYY-MM-DD)\n  - adults: number of adult travelers (integer)\n  \nYou may include optional keys for:\n  - children, infants, travelClass, nonStop, currencyCode, max\n\nGuardrails:\n\n- Do NOT ask any clarifying questions or include any text besides the JSON object.\n- Do NOT include any explanation, notes, or multiple JSON objects in your response.\n- Always return strictly valid JSON, nothing else.\n- If information is missing or ambiguous, supply the most reasonable default values silently.\n\nExample JSON output:\n\n{\n  \"origin\": \"SYD\",\n  \"destination\": \"LON\",\n  \"departureDate\": \"2025-08-30\",\n  \"adults\": 2\n}\n\nRespond only with the JSON object.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -816,
+        80
+      ],
+      "id": "db84624e-29f2-4e6f-999c-c16849a0b435",
+      "name": "Amadeus Travel Advisory Bot Test "
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dateTimeTool",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        304
+      ],
+      "id": "04d472a8-dfd2-40a8-bffd-36a4c91bbd55",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://test.api.amadeus.com/v1/security/oauth2/token",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "client_credentials"
+            },
+            {
+              "name": "client_id",
+              "value": "47FYrahcA8nUPDLXfhAeFHYTJF2nx8kR"
+            },
+            {
+              "name": "client_secret",
+              "value": "NMwO24vhyASe6mHy"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        -16
+      ],
+      "id": "709a6716-542c-434b-ae43-8f5e726fcb87",
+      "name": "Get Token"
+    },
+    {
+      "parameters": {
+        "code": {
+          "execute": {
+            "code": "// Get the AI agent output text\nconst aiOutput = this.getInputData(0)[0]?.json.output || '';\n\n// Use regex to extract the first JSON object block from the text\nconst jsonMatch = aiOutput.match(/\\{[\\s\\S]*\\}/);\n\nif (!jsonMatch) {\n  throw new Error('No JSON object found in AI output');\n}\n\n// Parse the extracted JSON string\nconst parsedJson = JSON.parse(jsonMatch[0]);\n\n// Ensure required keys exist for safety, set defaults if needed\nconst output = {\n  origin: parsedJson.origin,\n  destination: parsedJson.destination,\n  departureDate: parsedJson.departureDate,\n  adults: parsedJson.adults || 1,\n};\n\n// Return the cleaned JSON for downstream usage\nreturn [{ json: output }];\n"
+          }
+        },
+        "inputs": {
+          "input": [
+            {
+              "type": "main"
+            }
+          ]
+        },
+        "outputs": {
+          "output": [
+            {
+              "type": "main"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.code",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        176
+      ],
+      "id": "6e38808f-3d5c-4811-95be-880c242dcc16",
+      "name": "LangChain Code1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -176,
+        80
+      ],
+      "id": "54442b68-98d3-4f17-846d-279739beafbf",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "https://test.api.amadeus.com/v2/shopping/flight-offers",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "originLocationCode",
+              "value": "={{ $json.origin }}"
+            },
+            {
+              "name": "destinationLocationCode",
+              "value": "={{ $json.destination }}"
+            },
+            {
+              "name": "departureDate",
+              "value": "={{ $json.departureDate }}"
+            },
+            {
+              "name": "adults",
+              "value": "={{ $json.adults }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Authorization\": \"Bearer {{$json.access_token}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        48,
+        80
+      ],
+      "id": "f018460f-251a-4ff2-8c86-169d8f05d182",
+      "name": "Flight Offers"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst inputData = $input.first().json;\n// Parse the JSON string\nlet flightData;\ntry {\n flightData = JSON.parse(inputData.data);\n} catch (e) {\n return [{ json: { \n   error: \"Failed to parse flight data\", \n   parseError: e.message,\n   dataType: typeof inputData.data\n } }];\n}\n// Now check if we have the expected structure\nif (!flightData || !flightData.data) {\n return [{ json: { \n   error: \"No flight data found after parsing\",\n   structure: Object.keys(flightData || {})\n } }];\n}\n// Check if data array is empty\nif (flightData.data.length === 0) {\n return [{ json: { message: \"No flights found for your search criteria.\" } }];\n}\n// Format each flight offer (top 5)\nconst formattedFlights = flightData.data.slice(0, 5).map((offer, index) => {\n const itinerary = offer.itineraries[0];\n const firstSegment = itinerary.segments[0];\n const lastSegment = itinerary.segments[itinerary.segments.length - 1];\n const price = offer.price;\n \n return {\n   option: index + 1,\n   airline: firstSegment.carrierCode,\n   flight: firstSegment.number,\n   departure: {\n     airport: firstSegment.departure.iataCode,\n     time: new Date(firstSegment.departure.at).toLocaleString(),\n   },\n   arrival: {\n     airport: lastSegment.arrival.iataCode,\n     time: new Date(lastSegment.arrival.at).toLocaleString(),\n   },\n   duration: itinerary.duration,\n   price: `${price.total} ${price.currency}`,\n   bookingClass: firstSegment.cabin || 'Economy',\n   stops: itinerary.segments.length - 1\n };\n});\n// Create summary\nconst summary = {\n searchSummary: {\n   from: formattedFlights[0]?.departure.airport,\n   to: formattedFlights[0]?.arrival.airport,\n   totalOptions: flightData.data.length,\n   showingTop: Math.min(5, flightData.data.length)\n },\n flights: formattedFlights\n};\nreturn [{ json: summary }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        80
+      ],
+      "id": "c3243828-6e04-4cbd-8e45-432c113b440c",
+      "name": "Format Flight Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "const flightSummary = $input.first().json;\n\n// Create a nice chat response\nlet response = `✈️ **Flight Search Results**\\n\\n`;\nresponse += `**${flightSummary.searchSummary.from} → ${flightSummary.searchSummary.to}**\\n`;\nresponse += `Found ${flightSummary.searchSummary.totalOptions} flights, showing top ${flightSummary.searchSummary.showingTop}:\\n\\n`;\n\nflightSummary.flights.forEach(flight => {\n  response += `**${flight.option}. ${flight.airline} ${flight.flight}** - ${flight.price}\\n`;\n  response += `   📅 Departs: ${flight.departure.time}\\n`;\n  response += `   📅 Arrives: ${flight.arrival.time}\\n`;\n  response += `   ⏱️ Duration: ${flight.duration.replace('PT', '').replace('H', 'h ').replace('M', 'm')}\\n`;\n  response += `   💺 Class: ${flight.bookingClass}\\n\\n`;\n});\n\nresponse += `💡 *This search used test API credentials*`;\n\nreturn [{ json: { output: response } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        80
+      ],
+      "id": "37cd8feb-2a3e-4308-a6db-fa25c813584b",
+      "name": "Create Chat Response"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        720,
+        80
+      ],
+      "id": "d4dd9e4d-f7c5-40e8-94d1-7152d1d927ee",
+      "name": "Respond to Chat"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Amadeus Travel Advisory Bot Test ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Amadeus Travel Advisory Bot Test ",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Amadeus Travel Advisory Bot Test ",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "ai_tool": [
+        [
+          {
+            "node": "Amadeus Travel Advisory Bot Test ",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amadeus Travel Advisory Bot Test ": {
+      "main": [
+        [
+          {
+            "node": "Get Token",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LangChain Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Token": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LangChain Code1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Flight Offers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flight Offers": {
+      "main": [
+        [
+          {
+            "node": "Format Flight Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Flight Results": {
+      "main": [
+        [
+          {
+            "node": "Create Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chat Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "99e52493-96b3-4942-b4f7-ba6f20b32f07",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b3398227427234397588ecb0e39c75fdbe7391b3b1893a085901f207d8f46554"
+  },
+  "id": "DrtNTwSXxZvmm7zb",
+  "tags": []
+}

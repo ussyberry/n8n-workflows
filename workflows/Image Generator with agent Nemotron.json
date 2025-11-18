@@ -1,0 +1,284 @@
+{
+  "name": "Image Generator with agent Nemotron",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9fc186d4-3052-43e2-8317-d9785015490b",
+      "name": "When chat message received",
+      "webhookId": "20e53c4c-b795-410a-9a51-294679047462"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "b1c2d3e4-f5a6-8901-bcde-f12345678901",
+      "name": "Validate Input"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Convert user requests into optimized image generation prompts. Output concise, descriptive prompts that specify: subject, style, composition, lighting, mood. Be specific about artistic style (e.g., \"photorealistic\", \"digital art\", \"watercolor\") and technical details (e.g., \"8k\", \"detailed\", \"cinematic lighting\"). Output only the prompt text, no explanations."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "aa14c11a-3a21-4f6a-9824-258f18cb4e62",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and clean the prompt from AI Agent output\nconst items = $input.all();\nconst agentOutput = items[0]?.json?.output || items[0]?.json?.text || items[0]?.json?.message || '';\n\n// Clean the output - remove any markdown, quotes, or extra formatting\nlet cleanedPrompt = agentOutput.toString().trim();\n\n// Remove markdown code blocks if present\ncleanedPrompt = cleanedPrompt.replace(/```[\\s\\S]*?```/g, '');\ncleanedPrompt = cleanedPrompt.replace(/`([^`]+)`/g, '$1');\n\n// Remove surrounding quotes\ncleanedPrompt = cleanedPrompt.replace(/^[\"']|[\"']$/g, '');\n\n// Remove common prefixes\ncleanedPrompt = cleanedPrompt.replace(/^(Prompt:|Image prompt:|Here's the prompt:)\\s*/i, '');\n\n// Ensure we have a valid prompt\nif (!cleanedPrompt || cleanedPrompt.length < 3) {\n  throw new Error('AI Agent did not generate a valid prompt. Original output: ' + agentOutput);\n}\n\n// Limit prompt length for API constraints (OpenAI DALL-E has ~4000 char limit)\nif (cleanedPrompt.length > 1000) {\n  cleanedPrompt = cleanedPrompt.substring(0, 1000).trim();\n}\n\nreturn [{\n  json: {\n    prompt: cleanedPrompt,\n    originalInput: items[0]?.json?.chatInput || items[0]?.json?.input || '',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "id": "c2d3e4f5-a6b7-9012-cdef-123456789012",
+      "name": "Extract & Clean Prompt"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "prompt": "={{ $json.prompt }}",
+        "options": {
+          "size": "1024x1024",
+          "quality": "standard",
+          "responseFormat": "url"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "74cbc08d-db13-420f-a6a4-584d1951a6a4",
+      "name": "Generate an image",
+      "credentials": {
+        "openAiApi": {
+          "id": "2Ys1wVDNxUN311uH",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format response for chat interface\nconst items = $input.all();\nconst imageData = items[0]?.json || {};\n\n// Extract image URL or base64 data\nconst imageUrl = imageData.url || imageData.data?.[0]?.url || imageData.imageUrl || '';\nconst imageDataBase64 = imageData.b64_json || imageData.data?.[0]?.b64_json || '';\n\n// Get the prompt that was used\nconst prompt = imageData.prompt || items[0]?.json?.prompt || 'Generated image';\n\n// Format response for n8n chat\nconst response = {\n  json: {\n    output: `Image generated successfully!\\n\\n**Prompt:** ${prompt}\\n\\n${imageUrl ? `[View Image](${imageUrl})` : imageDataBase64 ? 'Image data available' : 'Image generated'}`,\n    imageUrl: imageUrl,\n    imageData: imageDataBase64,\n    prompt: prompt,\n    timestamp: new Date().toISOString()\n  }\n};\n\nreturn [response];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "d3e4f5a6-b7c8-9012-def1-123456789013",
+      "name": "Format Response"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e4f5a6b7-c8d9-9012-ef12-123456789014",
+              "name": "output",
+              "value": "=Please provide a valid image description to generate.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        200
+      ],
+      "id": "e4f5a6b7-c8d9-9012-ef12-123456789014",
+      "name": "Error: Empty Input"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-nano-9b-v2:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        400,
+        400
+      ],
+      "id": "a1245f1e-316a-4663-80d4-3b62e08a53db",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "fSIW6LP1RuA32Hog",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        400
+      ],
+      "id": "a0d11c47-5552-43cc-9838-8514d9d1d6b4",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sjz9uJlsakAL46Xk",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error: Empty Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract & Clean Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract & Clean Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "",
+    "timezone": "America/New_York",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "679aecb0-f0dc-4e75-9e7c-4510ea112c3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b3398227427234397588ecb0e39c75fdbe7391b3b1893a085901f207d8f46554"
+  },
+  "id": "FGZxrLRMByZzrhAs",
+  "tags": []
+}

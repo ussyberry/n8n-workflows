@@ -1,0 +1,198 @@
+{
+  "name": "Resume to NOC",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload Resume",
+        "formDescription": "Upload your Resume PDF here",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resume_PDF",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf\n",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -580,
+        -20
+      ],
+      "id": "28e64e4c-76cb-4ede-b5a9-78b5e0e275e9",
+      "name": "On form submission",
+      "webhookId": "a9fa2f48-6f47-4b9c-9c06-7b62caffdb5e",
+      "notes": "this node uploads PDF resumes for processing by Ollama"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume_PDF",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        -20
+      ],
+      "id": "1b758daf-0924-44ae-921c-afef1547dfb0",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }} analyze this resume and summarize the skills and search the supabase table for the relevant Canada NOC codes for the various jobs and job descriptions from the experience.\n\n#query the supabase database to ensure accuracy of the NOC codes",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "62ae6e86-4cfc-462a-a963-b513d772c2e8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        180
+      ],
+      "id": "0efdf572-8d20-46be-92b9-1b32c958d8dc",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "KteDjcXWg0hO0Pra",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $workflow.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -220,
+        180
+      ],
+      "id": "31cecc81-5d15-4584-a8f4-64df5d9bd928",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "WvRkXVdNLPBJXN6i",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "NOC Canada",
+        "limit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Limit', ``, 'number') }}"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        -120,
+        180
+      ],
+      "id": "c728659b-a7b3-4e90-ae03-ad7ade5a0c62",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "qltRVadEabnO4Y8g",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bb3263da-7de6-4181-bcd3-73b48806ae2a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "3B3AbJWnIkmTG1it",
+  "tags": []
+}

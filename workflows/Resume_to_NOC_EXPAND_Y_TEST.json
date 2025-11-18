@@ -1,0 +1,215 @@
+{
+  "name": "Resume to NOC EXPAND Y TEST",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Upload Resume",
+        "formDescription": "Upload your Resume PDF here",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resume_PDF",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf\n",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -580,
+        -20
+      ],
+      "id": "3bcc7bc8-9fa2-444d-ab82-16aa472a3507",
+      "name": "On form submission",
+      "webhookId": "2c784734-0d40-4b54-b8b0-e8dce65e14b0",
+      "notes": "this node uploads PDF resumes for processing by Ollama"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume_PDF",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        -20
+      ],
+      "id": "eb60a840-8f2d-4c36-92ff-f3cbcebe7656",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }} analyze this resume and summarize the skills and search the supabase table for the relevant Canada NOC codes for the various jobs and job descriptions from the experience.\n\n#query the mcp client tool which is attached to the NOC MCP SERVER supabase database to ensure accuracy of the NOC codes",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -20
+      ],
+      "id": "818b0be7-0d3f-4559-87be-8520389b2b07",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        180
+      ],
+      "id": "ece9b5eb-de05-4614-b978-bc15ca10b834",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "KteDjcXWg0hO0Pra",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $workflow.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -220,
+        180
+      ],
+      "id": "7c5fe87e-00fe-47ba-9b73-12f45620f23b",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "WvRkXVdNLPBJXN6i",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -620,
+        160
+      ],
+      "id": "966b1a60-8711-4f89-bbec-eec7574770c0",
+      "name": "When chat message received",
+      "webhookId": "7121c507-83d9-4120-ac2e-7d3e6b9694d1"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:5678/mcp/dc3cf88b-e5a8-4111-8a7f-ce8881161040/sse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        200
+      ],
+      "id": "c5582c45-d414-4f69-9e46-cd44fb20e400",
+      "name": "MCP Client"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a893bfef-6706-466d-9491-c85f1d158a0f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "cq8ERIsSDrJcliZj",
+  "tags": []
+}

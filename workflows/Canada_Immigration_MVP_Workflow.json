@@ -1,0 +1,186 @@
+{
+  "name": "Canada Immigration MVP",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "downloadBinaryContent",
+        "url": "={{$json[\"resumeUrl\"]}}"
+      },
+      "id": "2",
+      "name": "Download Resume PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        450,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extracts text from resume or uses AI API\nreturn [{ json: { extractedResumeText: 'Mock resume text with skills, education, experience...' } }];"
+      },
+      "id": "3",
+      "name": "Extract Resume Text",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        650,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "form",
+        "fields": [
+          {
+            "name": "citizenship",
+            "type": "string"
+          },
+          {
+            "name": "languages",
+            "type": "string"
+          },
+          {
+            "name": "preferredDestination",
+            "type": "string"
+          }
+        ]
+      },
+      "id": "4",
+      "name": "Ask Additional Questions",
+      "type": "n8n-nodes-base.forms",
+      "typeVersion": 1,
+      "position": [
+        450,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const resume = $items()[0].json.extractedResumeText;\nconst answers = $items()[1].json;\n// Compose input for AI\nreturn [{\n  json: {\n    prompt: `Based on the following Canadian immigration candidate profile, give 3 recommended pathways with a probability of success.\\n\\nResume: ${resume}\\nCitizenship: ${answers.citizenship}\\nLanguages: ${answers.languages}\\nPreferred destination: ${answers.preferredDestination}`\n  }\n}];"
+      },
+      "id": "5",
+      "name": "Generate Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "={{$json[\"prompt\"]}}",
+        "temperature": 0.7
+      },
+      "id": "6",
+      "name": "Ask OpenAI for Recommendations",
+      "type": "n8n-nodes-base.openai",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "email": "={{$json.userEmail}}",
+        "subject": "Your Top 3 Canadian Immigration Pathways",
+        "text": "={{$json.choices[0].text}}"
+      },
+      "id": "7",
+      "name": "Send Email to Client",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Download Resume PDF",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ask Additional Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Resume PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Resume Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Resume Text": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Additional Questions": {
+      "main": [
+        [
+          {
+            "node": "Generate Prompt",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ask OpenAI for Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask OpenAI for Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Send Email to Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
