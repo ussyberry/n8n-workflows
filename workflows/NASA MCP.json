@@ -1,0 +1,514 @@
+{
+  "name": "NASA MCP",
+  "nodes": [
+    {
+      "parameters": {
+        "binaryPropertyName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Put_Output_File_in_Field', ``, 'string') }}",
+        "additionalFields": {
+          "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        -32
+      ],
+      "id": "50e92ba5-7bee-4768-8064-cd6c87bc1a1b",
+      "name": "NASA",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "asteroidNeoBrowse",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}"
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -16
+      ],
+      "id": "644a88ed-b777-4c68-a9b0-5ea216f5509b",
+      "name": "NASA1",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "asteroidNeoFeed",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        16
+      ],
+      "id": "6f3cb52f-a49f-4e74-a93e-73f8e2e84aed",
+      "name": "NASA2",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "asteroidNeoLookup",
+        "asteroidId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Asteroid_ID', ``, 'string') }}",
+        "additionalFields": {
+          "includeCloseApproachData": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Include_Close_Approach_Data', ``, 'boolean') }}"
+        }
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        32
+      ],
+      "id": "f9e121e7-c3b3-4026-988d-62ea98999a2c",
+      "name": "NASA3",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiCoronalMassEjection",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        32
+      ],
+      "id": "211d7dba-6bed-4f9f-97bf-343057619204",
+      "name": "NASA4",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiHighSpeedStream",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        64,
+        16
+      ],
+      "id": "a8b0156d-f589-4325-9c52-5e8c77833f2b",
+      "name": "NASA5",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiInterplanetaryShock",
+        "additionalFields": {
+          "location": "ALL",
+          "catalog": "ALL"
+        }
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -32
+      ],
+      "id": "17459d38-296a-44e8-b4fc-531d0bb49419",
+      "name": "NASA6",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiMagnetopauseCrossing",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        256,
+        32
+      ],
+      "id": "f7694d26-8f64-44a5-add2-6744d80566ba",
+      "name": "NASA7",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiNotifications",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        96
+      ],
+      "id": "dbdf110f-ff2a-492d-92e1-1fe8114a34c1",
+      "name": "NASA8",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiRadiationBeltEnhancement",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        144
+      ],
+      "id": "a06dabf0-254e-4c0d-9664-e95c879aba4a",
+      "name": "NASA9",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiSolarEnergeticParticle",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "213898eb-51c8-4998-8330-7bc5b4f1ea0b",
+      "name": "NASA10",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiSolarFlare",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        144
+      ],
+      "id": "d90aa6c5-f3e9-49d3-bdfc-89edc8608801",
+      "name": "NASA11",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "donkiWsaEnlilSimulation",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        80,
+        144
+      ],
+      "id": "60cc0de7-b26a-4fc9-9856-c49d8df455a2",
+      "name": "NASA12",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "earthAssets",
+        "lat": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Latitude', ``, 'number') }}",
+        "lon": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Longitude', ``, 'number') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        192
+      ],
+      "id": "6fed2a8a-1883-4f24-b55a-75f765a0bee9",
+      "name": "NASA13",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "earthImagery",
+        "lat": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Latitude', ``, 'number') }}",
+        "lon": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Longitude', ``, 'number') }}",
+        "binaryPropertyName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Put_Output_File_in_Field', ``, 'string') }}",
+        "additionalFields": {
+          "date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', ``, 'string') }}",
+          "dim": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Degrees', ``, 'number') }}"
+        }
+      },
+      "type": "n8n-nodes-base.nasaTool",
+      "typeVersion": 1,
+      "position": [
+        208,
+        176
+      ],
+      "id": "41f4f26e-7eb0-4753-aca4-ff146c3741f4",
+      "name": "NASA14",
+      "credentials": {
+        "nasaApi": {
+          "id": "JHR21oPkWoPevHy5",
+          "name": "NASA account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "aa3e8ff5-cd17-4bbc-adfb-f723cabc1e66"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -384,
+        -176
+      ],
+      "id": "8c320058-4714-4402-ab20-9d0ed56a14ef",
+      "name": "NASA APIs All",
+      "webhookId": "aa3e8ff5-cd17-4bbc-adfb-f723cabc1e66"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "NASA": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA1": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA2": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA3": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA4": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA5": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA6": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA7": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA8": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA9": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA10": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA11": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA12": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA13": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NASA14": {
+      "ai_tool": [
+        [
+          {
+            "node": "NASA APIs All",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "34f75c0c-8834-4553-a7db-9bb9442f38c2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32679809cd7fd6401df9cb90aaf98d78809563661a8aee26e5b27cc2f087f0d2"
+  },
+  "id": "EdhBXJBlDZHvzWUz",
+  "tags": []
+}

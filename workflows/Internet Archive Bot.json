@@ -1,0 +1,142 @@
+{
+  "name": "Internet Archive Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -160
+      ],
+      "id": "56fa1feb-8a08-4642-afbe-bca27f9bb4cb",
+      "name": "When chat message received",
+      "webhookId": "04fcd675-01ef-4927-abc0-1206b8a35e21"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-235b-a22b-2507:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        48
+      ],
+      "id": "d00e9da4-b75c-445e-98b6-74b20eec3ced",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "RmNAw9hUrzKcHISo",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 100
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        48
+      ],
+      "id": "1e47a443-01e5-48af-a2e5-0770bea5d63d",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "QQqluCr77Dx2bZtP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:5678/mcp/cd04e022-83c7-4316-b358-c08c921b0177"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        48
+      ],
+      "id": "3a9a84ac-96df-4472-b7d3-c204fa526608",
+      "name": "MCP Client- Internet Archive"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        -336,
+        -160
+      ],
+      "id": "861dc11f-b77e-489d-b3a3-a1b3912cc49f",
+      "name": "Internet Archive Bot"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Internet Archive Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Internet Archive Bot",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Internet Archive Bot",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client- Internet Archive": {
+      "ai_tool": [
+        [
+          {
+            "node": "Internet Archive Bot",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8fe84e39-cdf5-4ac7-85a2-00ea9a6f423b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32679809cd7fd6401df9cb90aaf98d78809563661a8aee26e5b27cc2f087f0d2"
+  },
+  "id": "B3xBFVE1O0qOm4Gt",
+  "tags": []
+}

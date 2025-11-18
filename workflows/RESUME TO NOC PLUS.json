@@ -1,0 +1,261 @@
+{
+  "name": "RESUME TO NOC PLUS",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "your-webhook-id",
+        "formTitle": "Upload Resume",
+        "formDescription": "Upload your Resume PDF here",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Resume_PDF",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        -128
+      ],
+      "name": "On form submission",
+      "webhookId": "your-webhook-id",
+      "id": "197cde10-39c8-447e-88f2-02f8b3dfae12"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Resume_PDF",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -128
+      ],
+      "name": "Extract from File",
+      "id": "48a39030-686e-4b6c-8594-cce5ff9bc94b"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a specialized AI resume parser that extracts detailed candidate information for Canadian immigration advisory.\n\n<ROLE>\nYou act as a precise data extractor focused on resume analysis for immigration suitability.\n\n<TASK>\nGiven the input resume text, extract and structure the following fields:\n- Full Name\n- Contact Email Address (verify format)\n- Location (city and country)\n- Education (degree, institution, dates)\n- Jobs: for each role extract Job Title, Employer Name, Start/End Dates, Job Description\n- Key Skills & Competencies relevant to Canadian NOC codes\n- Languages Spoken (if listed)\n- Certifications & Awards\n- Volunteer work or notable affiliations\n\nFor each job role, also recommend the best matching Canada NOC 2021 code with TEER level and a short justification.\n\n<INPUT>\nResume Text:\n{{$node[\"Extract from File\"].json[\"text\"]}}\n\n<OUTPUT>\nProvide a JSON object with keys:\n- full_name\n- email\n- location\n- education (array)\n- jobs (array with NOC info)\n- skills\n- languages\n- certifications\n- volunteer_work\n\nIf any field is unknown or missing, assign null but do not omit it.\n\nPlease ensure the **email** field is accurately extracted for notification purposes.\n\n---\n\nThank you.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        -128
+      ],
+      "name": "AI Agent",
+      "id": "47d11daa-71c7-431b-8b42-4c0db961388c"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        96
+      ],
+      "name": "OpenRouter Chat Model",
+      "id": "21d5965f-0163-454c-b25d-6dda80e51ec2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "RmNAw9hUrzKcHISo",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$workflow.id}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        96
+      ],
+      "name": "Postgres Chat Memory",
+      "id": "dda4d042-2e4d-4a41-a24d-004a7bf9c38d",
+      "credentials": {
+        "postgres": {
+          "id": "QQqluCr77Dx2bZtP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutputText = $json.output || ($json.raw_profile ? $json.raw_profile.output : null);\n\nif (rawOutputText) {\n  const jsonStart = rawOutputText.indexOf('``````');\n\n  if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {\n    const jsonString = rawOutputText.substring(jsonStart + 7, jsonEnd).trim();\n    try {\n      const parsedJson = JSON.parse(jsonString);\n      return [{ json: parsedJson }];\n    } catch (e) {\n      throw new Error(\"Error parsing JSON string: \" + e.message);\n    }\n  }\n}\n\nreturn [{ json: $json }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -128
+      ],
+      "name": "Code",
+      "id": "fa1fda03-2a7a-431a-8863-57b156fefe70"
+    },
+    {
+      "parameters": {
+        "jsCode": "const profile = $json;\n\nconst email = profile.email || null;\nconst jobsJson = JSON.stringify(profile.jobs || []);\nconst noc_codes = (profile.jobs || []).map(j => j.noc_code?.code || j.noc_code || null).filter(Boolean);\nconst education = JSON.stringify(profile.education || []);\nconst skills = JSON.stringify(profile.skills || []);\nconst certifications = JSON.stringify(profile.certifications || []);\nconst recommendation_text = profile.recommendation_text || null;\nconst timestamp = new Date().toISOString();\n\nreturn [{\n  json: {\n    email,\n    resume_data: JSON.stringify(profile),\n    noc_codes: JSON.stringify(noc_codes),\n    education,\n    skills,\n    certifications,\n    recommendation_text,\n    timestamp\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        -128
+      ],
+      "name": "Code1",
+      "id": "7a07a183-97e6-4897-b8fe-990785525601"
+    },
+    {
+      "parameters": {
+        "tableId": "immigration_advisories",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "resume_data",
+              "fieldValue": "={{$json.resume_data}}"
+            },
+            {
+              "fieldId": "noc_codes",
+              "fieldValue": "={{$json.noc_codes}}"
+            },
+            {
+              "fieldId": "recommendation_text",
+              "fieldValue": "={{$json.recommendation_text}}"
+            },
+            {
+              "fieldId": "timestamp",
+              "fieldValue": "={{$json.timestamp}}"
+            },
+            {
+              "fieldId": "={{ $json.email }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -128
+      ],
+      "name": "Log Advisory to Supabase",
+      "id": "5ad76dd3-3381-4109-aec2-f8241150c91a",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Kp0TMP7hcIeevbkk",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Log Advisory to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ce4ab8e2-9511-4c49-b9d0-df1ee3d038bf",
+  "meta": {
+    "instanceId": "32679809cd7fd6401df9cb90aaf98d78809563661a8aee26e5b27cc2f087f0d2"
+  },
+  "id": "v2CmWfN2QTgVtymf",
+  "tags": []
+}
