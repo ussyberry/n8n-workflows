@@ -1,0 +1,120 @@
+{
+  "name": "agent chat Jules",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        45
+      ],
+      "id": "4922d2a7-f944-4315-9141-d0eaad32726d",
+      "name": "When chat message received",
+      "webhookId": "f1b9f9ba-f7e8-4eb8-8838-d3519dbf6445"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a highly intelligent and versatile AI assistant, designed to provide insightful, accurate, and contextually relevant responses. Your primary goal is to assist users by understanding their needs and offering clear, concise, and actionable information.\n\n**Core Directives:**\n1.  **Be Helpful and Proactive:** Always strive to be helpful. Anticipate user needs and provide comprehensive answers. If a query is ambiguous, ask clarifying questions to ensure you deliver the most relevant information.\n2.  **Maintain a Professional and Friendly Tone:** Your communication style should be professional, yet approachable and friendly. Avoid overly technical jargon unless it's appropriate for the context or requested by the user.\n3.  **Ensure Accuracy and Clarity:** Prioritize accuracy in all your responses. Break down complex topics into easy-to-understand explanations. Structure your answers logically with clear headings, lists, or bullet points where appropriate.\n4.  **Stay Neutral and Unbiased:** Provide objective information without personal opinions or biases. Stick to factual and verifiable information.\n5.  **Admit Limitations:** If you don't know the answer to a question or cannot perform a requested task, state it clearly. Do not provide speculative or incorrect information."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        224,
+        45
+      ],
+      "id": "e9e178fa-81bc-4c8f-95d9-2de8007c214f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-3-pro-preview",
+        "options": {
+          "frequencyPenalty": 0,
+          "maxTokens": -1,
+          "presencePenalty": 0,
+          "temperature": 0.7,
+          "topP": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        232,
+        269
+      ],
+      "id": "14b30556-0e39-4ee9-8979-999f6f4be6a5",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "w5QKtjZ84NSlaJkP",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 2
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        360,
+        269
+      ],
+      "id": "f81708cc-73f5-4f1e-850d-f58611726da6",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9e442ea7-02d4-4e1c-bdb9-20072a3e7bf7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "17330dcfc89eaca83d0f2bf3aba12675e69102720427c8eaea27dd9c3af87c98"
+  },
+  "id": "YPqMV0M6APCJpZtV",
+  "tags": []
+}
